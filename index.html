@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ToneGuide — NLP Text Tone Transformer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f4f6f9;
+      color: #333333;
+      padding: 24px 16px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e1e4e8;
+      border-radius: 10px;
+      padding: 28px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    header {
+      border-bottom: 2px solid #1a2f5a;
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+    }
+    header h1 { color: #1a2f5a; font-size: 26px; }
+    header p { color: #555555; font-size: 14px; margin-top: 4px; }
+    
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; color: #1a2f5a; }
+    textarea {
+      width: 100%;
+      height: 110px;
+      padding: 12px;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
+      font-size: 15px;
+      font-family: inherit;
+      resize: vertical;
+    }
+    textarea:focus { outline: none; border-color: #1a2f5a; }
+    
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    select, input[type="range"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    .sample-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .sample-btn {
+      background: #eef2f7;
+      border: 1px solid #cbd5e1;
+      color: #1e293b;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .sample-btn:hover { background: #dbe2ef; }
+    
+    .btn-submit {
+      width: 100%;
+      background: #1a2f5a;
+      color: #ffffff;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-submit:hover { background: #122244; }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    .results-section { margin-top: 24px; display: none; }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .card h3 { font-size: 16px; color: #1a2f5a; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+    
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      text-align: center;
+    }
+    .metric-box {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 10px;
+    }
+    .metric-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+    .metric-val { font-size: 18px; font-weight: 700; color: #1a2f5a; margin: 4px 0; }
+    .metric-sub { font-size: 12px; color: #475569; }
+    
+    .output-box {
+      background: #eef4ff;
+      border-left: 4px solid #1a2f5a;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 4px;
+      line-height: 1.6;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    th { background: #e2e8f0; color: #1e293b; font-weight: 700; }
+    
+    details {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #475569;
+    }
+    summary { cursor: pointer; font-weight: 600; color: #1a2f5a; margin-bottom: 4px; }
+    pre { background: #f1f5f9; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+    
+    .status-text { font-size: 13px; color: #64748b; text-align: center; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>📘 ToneGuide</h1>
+      <p>NLP-Based Text Tone Transformer — College NLP Mini-Project</p>
+    </header>
+
+    <!-- Quick Samples -->
+    <div class="sample-buttons">
+      <span style="font-size: 13px; font-weight: 600; align-self: center;">Quick Samples:</span>
+      <button class="sample-btn" onclick="loadSample('I can\'t come to the meeting tomorrow because I have some work.', 'Professional', 70)">Meeting Excuse</button>
+      <button class="sample-btn" onclick="loadSample('Your report has many errors. Fix it immediately.', 'Friendly', 65)">Rough Feedback</button>
+      <button class="sample-btn" onclick="loadSample('Hey bro, send me the slides ASAP.', 'Formal', 80)">Casual Request</button>
+    </div>
+
+    <!-- Input Form -->
+    <div class="form-group">
+      <label for="inputText">1. Source Text:</label>
+      <textarea id="inputText" placeholder="Enter sentence or draft message here...">I can't come to the meeting tomorrow because I have some work.</textarea>
+    </div>
+
+    <div class="controls-grid">
+      <div class="form-group">
+        <label for="toneSelect">2. Target Tone:</label>
+        <select id="toneSelect"></select>
+      </div>
+
+      <div class="form-group">
+        <label for="intensitySlider">3. Tone Intensity (<span id="intensityVal">70</span>%):</label>
+        <input type="range" id="intensitySlider" min="0" max="100" value="70">
+      </div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="runPipeline()">🚀 Run NLP Pipeline</button>
+    <div class="status-text" id="statusText"></div>
+
+    <!-- Results Section -->
+    <div class="results-section" id="resultsSection">
+      
+      <!-- 1. Preprocessing -->
+      <div class="card">
+        <h3>1. Text Preprocessing & Statistics (NLTK Tokenization)</h3>
+        <p style="font-size:14px;" id="preprocStats"></p>
+        <details>
+          <summary>View Tokens & Sentence Split</summary>
+          <div style="margin-top:6px;">
+            <b>Tokens:</b> <span id="tokenList"></span><br/><br/>
+            <b>Sentences:</b> <span id="sentList"></span>
+          </div>
+        </details>
+      </div>
+
+      <!-- 2. Original Analysis -->
+      <div class="card">
+        <h3>2. Original Text NLP Analysis</h3>
+        <div class="metrics-row">
+          <div class="metric-box">
+            <div class="metric-label">Sentiment</div>
+            <div class="metric-val" id="origSent">—</div>
+            <div class="metric-sub" id="origSentConf">DistilBERT SST-2</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Dominant Emotion</div>
+            <div class="metric-val" id="origEmo">—</div>
+            <div class="metric-sub" id="origEmoConf">DistilRoBERTa</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Detected Tone</div>
+            <div class="metric-val" id="origTone">—</div>
+            <div class="metric-sub" id="origToneConf">Linguistic Rules</div>
+          </div>
+        </div>
+        <details style="margin-top:12px;">
+          <summary>Linguistic Features Extracted (Rule-Based Score)</summary>
+          <pre id="linguisticJson"></pre>
+        </details>
+      </div>
+
+      <!-- 3. Transformation -->
+      <div class="card">
+        <h3>3. Transformed Text Output</h3>
+        <div class="output-box" id="transformedOutput"></div>
+        <p style="font-size:12px; color:#64748b; margin-top:6px;" id="genMethodInfo"></p>
+      </div>
+
+      <!-- 4. Comparison -->
+      <div class="card">
+        <h3>4. Before vs. After Comparative Evaluation</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>NLP Dimension</th>
+              <th>Original Text</th>
+              <th>Transformed Text</th>
+            </tr>
+          </thead>
+          <tbody id="compTableBody"></tbody>
+        </table>
+        <p style="font-size:12px; color:#64748b; margin-top:8px;" id="simInfo"></p>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const inputText = document.getElementById('inputText');
+    const toneSelect = document.getElementById('toneSelect');
+    const intensitySlider = document.getElementById('intensitySlider');
+    const intensityVal = document.getElementById('intensityVal');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusText = document.getElementById('statusText');
+    const resultsSection = document.getElementById('resultsSection');
+
+    intensitySlider.addEventListener('input', (e) => {
+      intensityVal.innerText = e.target.value;
+    });
+
+    function loadSample(text, tone, intensity) {
+      inputText.value = text;
+      toneSelect.value = tone;
+      intensitySlider.value = intensity;
+      intensityVal.innerText = intensity;
+    }
+
+    async function initTones() {
+      try {
+        const res = await fetch('/api/tones');
+        const tones = await res.json();
+        toneSelect.innerHTML = '';
+        tones.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t;
+          opt.innerText = t;
+          toneSelect.appendChild(opt);
+        });
+      } catch (e) {
+        console.error("Failed to load tones", e);
+      }
+    }
+
+    initTones();
+
+    async function runPipeline() {
+      const text = inputText.value.trim();
+      if (!text) {
+        alert("Please enter some text first.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      statusText.innerText = "Running NLP models (Sentiment, Emotion, Tone, Rewriting, Similarity)...";
+
+      try {
+        const payload = {
+          text: text,
+          tone: toneSelect.value,
+          intensity: parseInt(intensitySlider.value, 10)
+        };
+
+        const res = await fetch('/api/transform', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Pipeline failed");
+        }
+
+        const data = await res.json();
+        renderResults(data);
+        statusText.innerText = `Completed in ${data.latency_ms} ms`;
+      } catch (err) {
+        alert(`Error: ${err.message}`);
+        statusText.innerText = "Error running analysis.";
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
+    function renderResults(data) {
+      resultsSection.style.display = 'block';
+
+      const orig = data.original_analysis;
+      const trans = data.transformed_analysis;
+
+      // 1. Preprocessing
+      document.getElementById('preprocStats').innerText = 
+        `Word Count: ${orig.preproc.word_count} words | Sentence Count: ${orig.preproc.sentence_count} | Avg Sentence Length: ${orig.preproc.avg_sentence_length} words`;
+      document.getElementById('tokenList').innerText = JSON.stringify(orig.preproc.tokens);
+      document.getElementById('sentList').innerText = JSON.stringify(orig.preproc.sentences);
+
+      // 2. Original Analysis
+      document.getElementById('origSent').innerText = orig.sentiment.sentiment;
+      document.getElementById('origSentConf').innerText = `${(orig.sentiment.confidence * 100).toFixed(1)}% confidence`;
+
+      document.getElementById('origEmo').innerText = orig.emotion.emotion;
+      document.getElementById('origEmoConf').innerText = `${(orig.emotion.confidence * 100).toFixed(1)}% confidence`;
+
+      document.getElementById('origTone').innerText = orig.tone.tone;
+      document.getElementById('origToneConf').innerText = `${orig.tone.confidence}% confidence`;
+
+      document.getElementById('linguisticJson').innerText = JSON.stringify(orig.tone.features, null, 2);
+
+      // 3. Transformation
+      document.getElementById('transformedOutput').innerText = data.transformed_text;
+      document.getElementById('genMethodInfo').innerText = `Method: ${data.gen_method}`;
+
+      // 4. Comparison
+      const tableBody = document.getElementById('compTableBody');
+      const simPercent = (data.similarity.score * 100).toFixed(1);
+
+      tableBody.innerHTML = `
+        <tr>
+          <td><b>Tone / Formality</b></td>
+          <td>${orig.tone.tone} (${orig.tone.confidence}%)</td>
+          <td>${trans.tone.tone} (${trans.tone.confidence}%)</td>
+        </tr>
+        <tr>
+          <td><b>Sentiment</b></td>
+          <td>${orig.sentiment.sentiment} (${(orig.sentiment.confidence * 100).toFixed(1)}%)</td>
+          <td>${trans.sentiment.sentiment} (${(trans.sentiment.confidence * 100).toFixed(1)}%)</td>
+        </tr>
+        <tr>
+          <td><b>Dominant Emotion</b></td>
+          <td>${orig.emotion.emotion} (${(orig.emotion.confidence * 100).toFixed(1)}%)</td>
+          <td>${trans.emotion.emotion} (${(trans.emotion.confidence * 100).toFixed(1)}%)</td>
+        </tr>
+        <tr>
+          <td><b>Word Count</b></td>
+          <td>${orig.preproc.word_count} words</td>
+          <td>${trans.preproc.word_count} words</td>
+        </tr>
+        <tr>
+          <td><b>Semantic Similarity</b></td>
+          <td>—</td>
+          <td><b>${simPercent}%</b> (Meaning Preservation)</td>
+        </tr>
+      `;
+
+      document.getElementById('simInfo').innerText = 
+        `Similarity Engine: ${data.similarity.method} (384-dim dense embeddings + cosine similarity)`;
+    }
+  </script>
+</body>
+</html>
