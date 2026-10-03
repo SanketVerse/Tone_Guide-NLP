@@ -1,21 +1,17 @@
 # ToneGuide — NLP-Based Text Tone Transformer
-# Production dependencies — install with: pip install -r requirements.txt
+# Pure NLP dependencies — no AI model or API key required.
+# Install with: pip install -r requirements.txt
 
 # Web server
 fastapi>=0.110.0
 uvicorn>=0.28.0
 pydantic>=2.6.0
 
-# NLP models
-transformers>=4.38.0
-torch>=2.2.0
-sentence-transformers>=2.5.0
-
 # NLP utilities
-nltk>=3.8.0
-scikit-learn>=1.4.0
+nltk>=3.8.0          # VADER sentiment analysis
+scikit-learn>=1.4.0  # TF-IDF + cosine similarity
 scipy>=1.12.0
 numpy>=1.26.0
 
-# HTTP (for optional external API)
+# HTTP (retained for completeness; not used by any NLP path)
 requests>=2.31.0

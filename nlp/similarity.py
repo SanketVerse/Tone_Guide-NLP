@@ -1,47 +1,29 @@
-"""Semantic similarity via Sentence Transformers + cosine similarity.
+"""Semantic similarity using TF-IDF + cosine similarity (scikit-learn).
 
-Maps both texts to dense sentence embeddings, then computes cosine
-similarity in [0, 1]. A higher score means the two texts are closer
-in meaning (embedding space).
+No ML model or internet required. TF-IDF converts each text into a
+sparse vector; cosine similarity measures how closely the two vectors
+align in meaning.
+
+Returns: {"score": float 0..1, "method": str}
 """
 
-from functools import lru_cache
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 
-def _cosine_fallback(text1: str, text2: str) -> float:
-    """Fallback when sentence-transformers is unavailable.
-
-    Uses TF-IDF + cosine similarity from scikit-learn.
-    """
-    try:
-        from sklearn.feature_extraction.text import TfidfVectorizer
-        from sklearn.metrics.pairwise import cosine_similarity
-
-        if not text1.strip() or not text2.strip():
-            return 0.0
-        vec = TfidfVectorizer().fit_transform([text1, text2])
-        score = float(cosine_similarity(vec[0], vec[1])[0][0])
-        return round(max(0.0, min(1.0, score)), 4)
-    except Exception:
-        a = set(text1.lower().split())
-        b = set(text2.lower().split())
-        if not a or not b:
-            return 0.0
-        return round(len(a & b) / len(a | b), 4)
-
-
-@lru_cache(maxsize=1)
-def _load_embedder(model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
-    from sentence_transformers import SentenceTransformer
-    # Using cpu for tiny sentence pairs is 50x faster on Mac than MPS kernel compile
-    return SentenceTransformer(model_name, device="cpu")
+def _jaccard_fallback(text1: str, text2: str) -> float:
+    """Word-overlap Jaccard index — used only if sklearn fails."""
+    a = set(text1.lower().split())
+    b = set(text2.lower().split())
+    if not a or not b:
+        return 0.0
+    return round(len(a & b) / len(a | b), 4)
 
 
 def compute_similarity(original: str, transformed: str) -> dict:
-    """Compute semantic similarity between two texts.
+    """Compute lexical similarity between two texts via TF-IDF cosine.
 
-    Returns {"score": float 0..1, "method": str}.
-    Never raises — falls back gracefully.
+    Returns {"score": float 0..1, "method": str}. Never raises.
     """
     orig_clean = original.strip()
     trans_clean = transformed.strip()
@@ -49,26 +31,16 @@ def compute_similarity(original: str, transformed: str) -> dict:
     if not orig_clean or not trans_clean:
         return {"score": 0.0, "method": "empty-input"}
 
-    # Fast check for identical text
     if orig_clean.lower() == trans_clean.lower():
         return {"score": 1.0, "method": "exact-match"}
 
     try:
-        model = _load_embedder()
-        embeddings = model.encode(
-            [orig_clean, trans_clean],
-            convert_to_tensor=True,
-            show_progress_bar=False,
-        )
-        from sentence_transformers.util import cos_sim
-        score = float(cos_sim(embeddings[0], embeddings[1]).item())
-        score = max(0.0, min(1.0, score))
-        return {
-            "score": round(score, 4),
-            "method": "sentence-transformers/all-MiniLM-L6-v2 + cosine",
-        }
+        vec = TfidfVectorizer().fit_transform([orig_clean, trans_clean])
+        score = float(cosine_similarity(vec[0], vec[1])[0][0])
+        score = round(max(0.0, min(1.0, score)), 4)
+        return {"score": score, "method": "tfidf-cosine (sklearn)"}
     except Exception:
         return {
-            "score": _cosine_fallback(orig_clean, trans_clean),
-            "method": "tfidf-cosine (fallback)",
+            "score": _jaccard_fallback(orig_clean, trans_clean),
+            "method": "jaccard-overlap (fallback)",
         }

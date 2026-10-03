@@ -1,21 +1,18 @@
 """ToneGuide — NLP-Based Text Tone Transformer.
 
 FastAPI backend + plain HTML/CSS/JS frontend.
+Pure NLP approach — no AI models, no API keys required.
 
 Run locally:
-    python app.py
+    python3 app.py
     Open http://localhost:8000
 
 Environment variables (all optional):
-    PORT            Server port (default: 8000)
-    TONE_API_URL    OpenAI-compatible API URL (enables API generation)
-    TONE_API_KEY    API key for the above
-    TONE_API_MODEL  Model name (default: gpt-4o-mini)
+    PORT   Server port (default: 8000)
 """
 
 import sys
 import time
-import threading
 from pathlib import Path
 from contextlib import asynccontextmanager
 
@@ -37,28 +34,9 @@ from nlp.similarity import compute_similarity
 from utils.helpers import validate_input, truncate
 
 
-# ---------------------------------------------------------------------------
-# Model warm-up (runs once in a background thread at startup)
-# ---------------------------------------------------------------------------
-
-def _warmup_models() -> None:
-    """Pre-warm all NLP models so the very first user request is fast."""
-    dummy = "Hello, this is a warm-up sentence."
-    print("[ToneGuide] Warming up NLP models in background...")
-    t0 = time.time()
-    try:
-        analyze_sentiment(dummy)
-        analyze_emotion(dummy)
-        compute_similarity(dummy, dummy)
-        transform_text(dummy, "Professional", 50)
-        print(f"[ToneGuide] Models ready in {time.time() - t0:.1f}s")
-    except Exception as exc:  # warmup failures must never crash the server
-        print(f"[ToneGuide] Warmup warning (non-fatal): {exc}")
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    threading.Thread(target=_warmup_models, daemon=True).start()
+    print("[ToneGuide] Ready — using pure NLP (NLTK VADER + TF-IDF + linguistic rules).")
     yield
 
 
