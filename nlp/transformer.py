@@ -62,7 +62,6 @@ SLANG_NORMALIZE = {
     "kinda like": "similar to",
     "basically": "essentially",
     "literally": "",
-    "like": "",         # discourse filler "like" is hard; strip bare instances
     "super": "very",
     "totally": "completely",
     "legit": "genuinely",
@@ -77,8 +76,8 @@ SLANG_NORMALIZE = {
     "vibes": "atmosphere",
     "vibe": "feel",
     "lit": "excellent",
-    "fire": "excellent",
-    "sick": "excellent",
+    # Note: "fire", "sick" are intentionally NOT normalized — they are also real words
+    # (e.g. "fire me", "feeling sick") and cannot be safely auto-replaced.
     "dope": "excellent",
     "goat": "exceptional",
     "based": "admirable",
@@ -93,12 +92,12 @@ SLANG_NORMALIZE = {
     "betcha": "I bet",
     "imo": "in my opinion",
     "gimme": "provide me with",
-    # Greetings / closings
-    "hey": "Hello",
-    "yo": "Hello",
-    "sup": "How are you",
-    "wassup": "How are you",
-    "hiya": "Hello",
+    # Greetings / closings — strip vocative greetings entirely for formal/professional
+    "hey": "",
+    "yo": "",
+    "sup": "",
+    "wassup": "",
+    "hiya": "",
     "cheers": "thank you",
     "later": "goodbye",
     "catch you": "goodbye",
@@ -151,10 +150,10 @@ SLANG_NORMALIZE = {
 # ---------------------------------------------------------------------------
 
 PROFESSIONAL_SWAPS = {
-    "send me": "please forward",
+    "send me": "please forward to me",
     "send": "forward",
-    "slides": "the presentation slides",
     "the slides": "the presentation slides",
+    "slides": "the presentation slides",
     "get": "obtain",
     "need": "require",
     "want": "would appreciate",
@@ -188,7 +187,9 @@ PROFESSIONAL_SWAPS = {
     "lots of": "numerous",
     "big": "substantial",
     "small": "minimal",
-    "soon": "at the earliest convenience",
+    # Note: "soon" is intentionally NOT swapped here — it's context-sensitive
+    # and "at the earliest convenience" only makes sense in request contexts.
+    # The sentence rewriter handles ASAP/"as soon as possible" explicitly.
     "now": "promptly",
     "later": "at a later time",
     "maybe": "it may be possible that",
@@ -198,7 +199,7 @@ PROFESSIONAL_SWAPS = {
     "great": "excellent",
     "awesome": "exceptional",
     "amazing": "remarkable",
-    "cool": "satisfactory",
+    "cool": "impressive",
     "nice": "pleasing",
     "bad": "unsatisfactory",
     "wrong": "incorrect",
@@ -208,10 +209,24 @@ PROFESSIONAL_SWAPS = {
     "problem": "concern",
     "issue": "matter",
     "thing": "item",
-    "awesome": "exceptional",
-    "cool": "impressive",
     "stuff": "materials",
     "things": "items",
+    # Common everyday words → professional equivalents (grammar-safe)
+    "let me know": "please advise",
+    "I think": "I believe",
+    "I guess": "I believe",
+    "kind of": "somewhat",
+    "sort of": "somewhat",
+    "a bit": "somewhat",
+    "get back to": "revert to",
+    "get back": "respond",
+    "right now": "promptly",
+    "pretty": "considerably",
+    "really": "particularly",
+    "just": "",
+    "actually": "in fact",
+    "anyway": "regardless",
+    "as well": "additionally",
 }
 
 FORMAL_SWAPS = {
@@ -458,6 +473,10 @@ def _fix_grammar_after_substitution(s: str) -> str:
     s = re.sub(r'\blook\s+at\s+this\b', 'review this', s, flags=re.I)
     # "review this out" → "review this" (from check+out then review)
     s = re.sub(r'\breview\s+this\s+out\b', 'review this', s, flags=re.I)
+    # "would appreciate to <verb>" → "would like to <verb>" (appreciate doesn't take infinitives)
+    s = re.sub(r'\bwould\s+appreciate\s+to\b', 'would like to', s, flags=re.I)
+    # "discuss to" → "discuss with" (discuss takes no bare "to" preposition)
+    s = re.sub(r'\bdiscuss\s+to\b', 'discuss with', s, flags=re.I)
     # Deduplicate polite markers from stacked substitutions (e.g. "can you please please forward")
     s = re.sub(r'\bplease\s+please\b', 'please', s, flags=re.I)
     s = re.sub(r'\bkindly\s+kindly\b', 'kindly', s, flags=re.I)
@@ -471,12 +490,16 @@ def _fix_grammar_after_substitution(s: str) -> str:
 def _rewrite_sentence_professional(sent: str, intensity: int) -> str:
     """Rewrite a single sentence to professional register."""
     s = sent.strip()
-    # Strip greeting artefacts that may survive after slang normalisation
-    s = re.sub(r'^(Hello|Hi|Hey)[,!]?\s*', '', s, flags=re.I).strip()
+
+    # Strip ALL greeting/vocative artefacts that may survive after slang normalisation.
+    # This covers: Hello, Hi, Hey, "How are you", "Good morning", etc.
+    s = re.sub(r'^(Hello|Hi|Hey|Good\s+(?:morning|afternoon|evening))[,!]?\s*', '', s, flags=re.I).strip()
+    s = re.sub(r'^How\s+are\s+you[,!?]?\s*', '', s, flags=re.I).strip()
+    # Strip leading empty artefacts from blank-substituted vocatives (e.g. ", " at start)
+    s = re.sub(r'^[,!?;\s]+', '', s).strip()
     s = _capitalise_first(s)
 
-    # Convert "send me X ASAP" → "please forward X at your earliest convenience"
-    s = re.sub(r'\bsend\s+me\b', 'please forward', s, flags=re.I)
+    # ASAP / as soon as possible → at your earliest convenience
     s = re.sub(r'\bASAP\b', 'at your earliest convenience', s)
     s = re.sub(r'\bas soon as possible\b', 'at your earliest convenience', s, flags=re.I)
 
@@ -506,13 +529,13 @@ def _rewrite_sentence_professional(sent: str, intensity: int) -> str:
     # High-intensity: add polite opening if imperative/request
     if intensity > 60:
         # Detect imperative-style requests (starts with verb)
-        if re.match(r'^(please\s+)?(send|share|forward|give|tell|call|write|check|review|submit|complete|update|provide)\b', s, re.I):
+        if re.match(r'^(send|share|forward|give|tell|call|write|check|review|submit|complete|update|provide)\b', s, re.I):
             if not s.lower().startswith("please"):
                 s = "Please " + s[0].lower() + s[1:]
 
     # Ensure professional ending (replace ! with . for professional tone)
     s = re.sub(r'!+', '.', s)
-    
+
     return _capitalise_first(_ensure_period(s))
 
 
@@ -689,8 +712,13 @@ def _rule_based_transform(text: str, tone: str, intensity: int) -> str:
         text = re.sub(r',\s*,', ',', text)          # double comma
         text = re.sub(r'^[,!?;\s]+', '', text)       # leading punctuation
         text = re.sub(r'\s{2,}', ' ', text).strip()
-        # Strip leading greeting words that survived (Hello/Hi/Hey) with trailing comma
-        text = re.sub(r'^(Hello|Hi|Hey)[,!]?\s*', '', text).strip()
+        # Strip leading greeting words/phrases that survived normalisation
+        text = re.sub(r'^(Hello|Hi|Hey|Good\s+(?:morning|afternoon|evening))[,!]?\s*', '', text, flags=re.I).strip()
+        text = re.sub(r'^How\s+are\s+you[,!?]?\s*', '', text, flags=re.I).strip()
+        # Strip any mid-sentence isolated vocatives that remain (e.g. ", bro," already handled but safety pass)
+        text = re.sub(r',?\s*\b(bro|dude|mate|pal|man|fam|gang|buddy)\b\s*,?', ' ', text, flags=re.I)
+        text = re.sub(r'\s{2,}', ' ', text).strip()
+        text = re.sub(r'^[,!?;\s]+', '', text).strip()
         text = _capitalise_first(text)
 
     # Phase 2: Sentence-level rewriting
