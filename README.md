@@ -17,7 +17,8 @@ original vs. transformed result.
 | 3 | Emotion Detection | Keyword-lexicon scoring |
 | 4 | Tone Classification | Linguistic feature scoring (rule-based) |
 | 5 | Text Transformation | Word-substitution + sentence-level rules |
-| 6 | Similarity Scoring | TF-IDF + Cosine Similarity (scikit-learn) |
+| 6 | Output Context Formatting | Rule-based structural framing (Email, Chat, Post, etc.) |
+| 7 | Similarity Scoring | Blended: Content Coverage + Retention + TF-IDF + Char N-gram |
 
 ---
 
@@ -25,21 +26,25 @@ original vs. transformed result.
 
 ```
 ToneGuide/
-├── app.py               # FastAPI server + API endpoints
-├── index.html           # Frontend (plain HTML / CSS / JS)
-├── requirements.txt     # Python dependencies
+├── app.py                  # FastAPI server + API endpoints
+├── index.html              # Frontend (plain HTML / CSS / JS)
+├── requirements.txt        # Python dependencies
 ├── README.md
+├── docs/                   # Project guide and viva explanation documents
+│   ├── ToneGuide_Project_Guide.pdf
+│   └── ToneGuide_Project_Explanation_and_Viva_Guide.docx
 ├── nlp/
 │   ├── __init__.py
-│   ├── preprocessing.py # Text normalisation, sentence split, tokenisation
-│   ├── sentiment.py     # Sentiment: Positive / Negative / Neutral (VADER)
-│   ├── emotion.py       # Emotion: 7-category keyword detection
-│   ├── tone.py          # Tone: rule-based linguistic feature scoring (8 tones)
-│   ├── transformer.py   # Tone rewriting: word substitution + sentence rules
-│   └── similarity.py    # Similarity: TF-IDF cosine (scikit-learn)
+│   ├── preprocessing.py    # Text normalisation, sentence split, tokenisation
+│   ├── sentiment.py        # Sentiment: Positive / Negative / Neutral (VADER)
+│   ├── emotion.py          # Emotion: 7-category keyword detection
+│   ├── tone.py             # Tone: rule-based linguistic feature scoring (8 tones)
+│   ├── transformer.py      # Tone rewriting: word substitution + sentence rules
+│   ├── context_formatter.py# Context framing: Email, Chat, LinkedIn, Academic, Feedback
+│   └── similarity.py       # Similarity: Blended TF-IDF + n-gram + synonym matching
 └── utils/
     ├── __init__.py
-    └── helpers.py       # Input validation, truncation, formatting
+    └── helpers.py          # Input validation, truncation, formatting
 ```
 
 ---
@@ -72,8 +77,8 @@ Interactive API docs: **http://localhost:8000/docs**
 - **Linguistic Feature Extraction** — contractions, slang, formal/academic vocabulary, pronouns, punctuation, sentence length
 - **Rule-Based Tone Classification** — per-tone scoring from interpretable features; fully explainable
 - **Lexical Text Transformation** — word-substitution dictionaries + tone-specific sentence patterns
-- **TF-IDF Vectorisation** — converting text to weighted term-frequency vectors
-- **Cosine Similarity** — `cos(a, b) = (a · b) / (‖a‖ · ‖b‖)` to measure meaning preservation
+- **Context-Specific Formatting** — rule-based structural framing adapting text for Emails, WhatsApp/Chat, LinkedIn, Academic paragraphs, and Teammate feedback
+- **TF-IDF Vectorisation & Blended Similarity** — combines TF-IDF cosine, key content word coverage, synonym recognition, and n-gram overlap to evaluate meaning preservation
 
 ---
 

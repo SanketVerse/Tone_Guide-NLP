@@ -122,7 +122,10 @@
       font-size: 16px;
       border-radius: 4px;
       line-height: 1.6;
+      white-space: pre-wrap;
     }
+    .formatting-info { font-size: 12px; color: #475569; margin-top: 8px; }
+    .formatting-info ul { margin: 4px 0 0 18px; }
     
     table {
       width: 100%;
@@ -177,7 +180,19 @@
       </div>
 
       <div class="form-group">
-        <label for="intensitySlider">3. Tone Intensity (<span id="intensityVal">70</span>%):</label>
+        <label for="contextSelect">3. Output Context:</label>
+        <select id="contextSelect">
+          <option value="General Text" selected>General Text</option>
+          <option value="Email">Email</option>
+          <option value="WhatsApp / Chat">WhatsApp / Chat</option>
+          <option value="LinkedIn Post">LinkedIn Post</option>
+          <option value="Academic Paragraph">Academic Paragraph</option>
+          <option value="Feedback to Teammate">Feedback to Teammate</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="intensitySlider">4. Tone Intensity (<span id="intensityVal">70</span>%):</label>
         <input type="range" id="intensitySlider" min="0" max="100" value="70">
       </div>
     </div>
@@ -232,6 +247,7 @@
         <h3>3. Transformed Text Output</h3>
         <div class="output-box" id="transformedOutput"></div>
         <p style="font-size:12px; color:#64748b; margin-top:6px;" id="genMethodInfo"></p>
+        <div class="formatting-info" id="formattingInfo"></div>
       </div>
 
       <!-- 4. Comparison -->
@@ -256,6 +272,7 @@
   <script>
     const inputText = document.getElementById('inputText');
     const toneSelect = document.getElementById('toneSelect');
+    const contextSelect = document.getElementById('contextSelect');
     const intensitySlider = document.getElementById('intensitySlider');
     const intensityVal = document.getElementById('intensityVal');
     const submitBtn = document.getElementById('submitBtn');
@@ -305,6 +322,7 @@
         const payload = {
           text: text,
           tone: toneSelect.value,
+          context: contextSelect.value,
           intensity: parseInt(intensitySlider.value, 10)
         };
 
@@ -357,6 +375,10 @@
       // 3. Transformation
       document.getElementById('transformedOutput').innerText = data.transformed_text;
       document.getElementById('genMethodInfo').innerText = `Method: ${data.gen_method}`;
+      const formattingNotes = data.formatting_applied || [];
+      document.getElementById('formattingInfo').innerHTML = formattingNotes.length
+        ? `<b>Output Context: ${data.context}</b><ul>${formattingNotes.map(note => `<li>${note}</li>`).join('')}</ul>`
+        : `<b>Output Context: ${data.context}</b> — No additional structural formatting applied.`;
 
       // 4. Comparison
       const tableBody = document.getElementById('compTableBody');

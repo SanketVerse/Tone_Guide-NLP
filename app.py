@@ -30,6 +30,7 @@ from nlp.sentiment import analyze_sentiment
 from nlp.emotion import analyze_emotion
 from nlp.tone import analyze_tone
 from nlp.transformer import transform_text, TARGET_TONES
+from nlp.context_formatter import apply_context_formatting
 from nlp.similarity import compute_similarity
 from utils.helpers import validate_input, truncate
 
@@ -60,6 +61,7 @@ class TransformRequest(BaseModel):
     text: str = Field(..., min_length=1, description="Input text to transform")
     tone: str = Field("Professional", description="Target tone")
     intensity: int = Field(70, ge=0, le=100, description="Tone intensity 0–100")
+    context: str = Field("General Text", description="Output structure context")
 
 
 # ---------------------------------------------------------------------------
@@ -108,13 +110,17 @@ def transform_endpoint(req: TransformRequest) -> dict:
             transformed_text = clean_text
             gen_method = "passthrough (model returned empty)"
 
-        # Step 3: Re-analysis of transformed text
+        # Step 3: Deterministic context-specific structural formatting
+        context_res = apply_context_formatting(transformed_text, req.context, req.tone)
+        transformed_text = context_res["text"]
+
+        # Step 4: Re-analysis of transformed text
         trans_pre = preprocess_for_analysis(transformed_text)
         trans_sent = analyze_sentiment(transformed_text)
         trans_emo = analyze_emotion(transformed_text)
         trans_tone = analyze_tone(transformed_text, trans_pre)
 
-        # Step 4: Semantic similarity
+        # Step 5: Semantic similarity
         sim_res = compute_similarity(clean_text, transformed_text)
 
         elapsed_ms = round((time.time() - t0) * 1000, 1)
@@ -124,6 +130,8 @@ def transform_endpoint(req: TransformRequest) -> dict:
             "transformed_text": transformed_text,
             "target_tone": req.tone,
             "intensity": req.intensity,
+            "context": context_res["context"],
+            "formatting_applied": context_res["formatting_applied"],
             "gen_method": gen_method,
             "original_analysis": {
                 "preproc": orig_pre,
