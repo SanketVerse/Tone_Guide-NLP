@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ToneGuide — NLP Text Tone Transformer</title>
+  <title>ToneGuide — NLP Text Tone Transformer with Marathi Regional Support</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -14,33 +14,147 @@
       line-height: 1.5;
     }
     .container {
-      max-width: 860px;
+      max-width: 880px;
       margin: 0 auto;
       background: #ffffff;
       border: 1px solid #e1e4e8;
       border-radius: 10px;
       padding: 28px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
     }
     header {
       border-bottom: 2px solid #1a2f5a;
       padding-bottom: 14px;
       margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     header h1 { color: #1a2f5a; font-size: 26px; }
     header p { color: #555555; font-size: 14px; margin-top: 4px; }
     
+    .project-tag {
+      background: #e0e7ff;
+      color: #3730a3;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      align-self: center;
+    }
+
+    /* Regional Toggle Card */
+    .regional-card {
+      background: #f0f7ff;
+      border: 1.5px solid #cbdcf7;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      transition: all 0.25s ease;
+    }
+    .regional-card.active {
+      background: #fffbeb;
+      border-color: #fcd34d;
+      box-shadow: 0 3px 10px rgba(217, 119, 6, 0.12);
+    }
+    .regional-info {
+      flex: 1;
+    }
+    .regional-title {
+      font-weight: 700;
+      font-size: 15px;
+      color: #1a2f5a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .regional-card.active .regional-title {
+      color: #92400e;
+    }
+    .regional-desc {
+      font-size: 13px;
+      color: #555555;
+      margin-top: 3px;
+    }
+    .regional-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .mode-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: #e2e8f0;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .mode-pill.active {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+
+    /* Modern Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cbd5e1;
+      transition: 0.3s;
+      border-radius: 28px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    }
+    input:checked + .slider {
+      background-color: #d97706; /* saffron/amber for Marathi */
+    }
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
     .form-group { margin-bottom: 16px; }
     label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; color: #1a2f5a; }
     textarea {
       width: 100%;
-      height: 110px;
+      height: 115px;
       padding: 12px;
       border: 1px solid #cccccc;
       border-radius: 6px;
       font-size: 15px;
       font-family: inherit;
       resize: vertical;
+      line-height: 1.5;
     }
     textarea:focus { outline: none; border-color: #1a2f5a; }
     
@@ -63,6 +177,7 @@
       gap: 8px;
       margin-bottom: 16px;
       flex-wrap: wrap;
+      align-items: center;
     }
     .sample-btn {
       background: #eef2f7;
@@ -72,8 +187,15 @@
       border-radius: 6px;
       font-size: 13px;
       cursor: pointer;
+      transition: background 0.15s ease;
     }
     .sample-btn:hover { background: #dbe2ef; }
+    .sample-btn.marathi-btn {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: #9a3412;
+    }
+    .sample-btn.marathi-btn:hover { background: #ffedd5; }
     
     .btn-submit {
       width: 100%;
@@ -85,8 +207,13 @@
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .btn-submit.marathi-active {
+      background: #b45309;
     }
     .btn-submit:hover { background: #122244; }
+    .btn-submit.marathi-active:hover { background: #92400e; }
     .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
     
     .results-section { margin-top: 24px; display: none; }
@@ -97,7 +224,16 @@
       padding: 16px;
       margin-bottom: 16px;
     }
-    .card h3 { font-size: 16px; color: #1a2f5a; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+    .card h3 {
+      font-size: 16px;
+      color: #1a2f5a;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     
     .metrics-row {
       display: grid;
@@ -124,7 +260,12 @@
       line-height: 1.6;
       white-space: pre-wrap;
     }
-    .formatting-info { font-size: 12px; color: #475569; margin-top: 8px; }
+    .output-box.marathi-output {
+      background: #fffbeb;
+      border-left-color: #d97706;
+      font-size: 16.5px;
+    }
+    .formatting-info { font-size: 12.5px; color: #475569; margin-top: 8px; }
     .formatting-info ul { margin: 4px 0 0 18px; }
     
     table {
@@ -149,50 +290,84 @@
     pre { background: #f1f5f9; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
     
     .status-text { font-size: 13px; color: #64748b; text-align: center; margin-top: 8px; }
+
+    .lang-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #e0f2fe;
+      color: #0369a1;
+      margin-left: 6px;
+    }
+    .lang-badge.marathi {
+      background: #fef3c7;
+      color: #b45309;
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
     <header>
-      <h1>📘 ToneGuide</h1>
-      <p>NLP-Based Text Tone Transformer — College NLP Mini-Project</p>
+      <div>
+        <h1>📘 ToneGuide</h1>
+        <p>NLP-Based Text Tone Transformer — College NLP Mini-Project</p>
+      </div>
+      <span class="project-tag">Pure NLP • No API Keys</span>
     </header>
 
+    <!-- Regional Language Toggle Card -->
+    <div class="regional-card" id="regionalCard">
+      <div class="regional-info">
+        <div class="regional-title">
+          <span>🌐 Regional Language Support: मराठी (Marathi)</span>
+          <span class="mode-pill" id="modePill">English Mode</span>
+        </div>
+        <div class="regional-desc" id="regionalDesc">
+          Switch toggle <b>ON</b> to convert Marathi sentences/paragraphs into <b>Professional</b>, <b>Sad</b>, <b>Neutral</b>, etc. via rule-based NLP.
+        </div>
+      </div>
+      <div class="regional-controls">
+        <label class="switch">
+          <input type="checkbox" id="regionalToggle" onchange="handleRegionalToggle()">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
     <!-- Quick Samples -->
-    <div class="sample-buttons">
-      <span style="font-size: 13px; font-weight: 600; align-self: center;">Quick Samples:</span>
-      <button class="sample-btn" onclick="loadSample('I can\'t come to the meeting tomorrow because I have some work.', 'Professional', 70)">Meeting Excuse</button>
-      <button class="sample-btn" onclick="loadSample('Your report has many errors. Fix it immediately.', 'Friendly', 65)">Rough Feedback</button>
-      <button class="sample-btn" onclick="loadSample('Hey bro, send me the slides ASAP.', 'Formal', 80)">Casual Request</button>
+    <div class="sample-buttons" id="samplesContainer">
+      <!-- Injected dynamically via JS based on toggle -->
     </div>
 
     <!-- Input Form -->
     <div class="form-group">
-      <label for="inputText">1. Source Text:</label>
+      <label for="inputText" id="inputLabel">1. Source Text:</label>
       <textarea id="inputText" placeholder="Enter sentence or draft message here...">I can't come to the meeting tomorrow because I have some work.</textarea>
     </div>
 
     <div class="controls-grid">
       <div class="form-group">
-        <label for="toneSelect">2. Target Tone:</label>
+        <label for="toneSelect" id="toneLabel">2. Target Tone:</label>
         <select id="toneSelect"></select>
       </div>
 
       <div class="form-group">
-        <label for="contextSelect">3. Output Context:</label>
+        <label for="contextSelect" id="contextLabel">3. Output Context:</label>
         <select id="contextSelect">
-          <option value="General Text" selected>General Text</option>
-          <option value="Email">Email</option>
-          <option value="WhatsApp / Chat">WhatsApp / Chat</option>
-          <option value="LinkedIn Post">LinkedIn Post</option>
-          <option value="Academic Paragraph">Academic Paragraph</option>
-          <option value="Feedback to Teammate">Feedback to Teammate</option>
+          <option value="General Text" selected>General Text (सामान्य मजकूर)</option>
+          <option value="Email">Email (ईमेल स्वरूप)</option>
+          <option value="WhatsApp / Chat">WhatsApp / Chat (संवाद/चॅट)</option>
+          <option value="LinkedIn Post">LinkedIn Post (लिंक्डइन विचार)</option>
+          <option value="Academic Paragraph">Academic Paragraph (शैक्षणिक परिच्छेद)</option>
+          <option value="Feedback to Teammate">Feedback to Teammate (सहकाऱ्यास अभिप्राय)</option>
         </select>
       </div>
 
       <div class="form-group">
-        <label for="intensitySlider">4. Tone Intensity (<span id="intensityVal">70</span>%):</label>
+        <label for="intensitySlider" id="intensityLabel">4. Tone Intensity (<span id="intensityVal">70</span>%):</label>
         <input type="range" id="intensitySlider" min="0" max="100" value="70">
       </div>
     </div>
@@ -205,7 +380,10 @@
       
       <!-- 1. Preprocessing -->
       <div class="card">
-        <h3>1. Text Preprocessing & Statistics (NLTK Tokenization)</h3>
+        <h3>
+          <span>1. Text Preprocessing & Statistics</span>
+          <span id="preprocBadge" class="lang-badge">English</span>
+        </h3>
         <p style="font-size:14px;" id="preprocStats"></p>
         <details>
           <summary>View Tokens & Sentence Split</summary>
@@ -218,33 +396,39 @@
 
       <!-- 2. Original Analysis -->
       <div class="card">
-        <h3>2. Original Text NLP Analysis</h3>
+        <h3>
+          <span>2. Original Text NLP Analysis</span>
+          <span id="analysisBadge" class="lang-badge">Rule-Based / Lexicon</span>
+        </h3>
         <div class="metrics-row">
           <div class="metric-box">
-            <div class="metric-label">Sentiment</div>
+            <div class="metric-label">Sentiment (भावना)</div>
             <div class="metric-val" id="origSent">—</div>
-            <div class="metric-sub" id="origSentConf">DistilBERT SST-2</div>
+            <div class="metric-sub" id="origSentConf">Confidence</div>
           </div>
           <div class="metric-box">
-            <div class="metric-label">Dominant Emotion</div>
+            <div class="metric-label">Dominant Emotion (भाव)</div>
             <div class="metric-val" id="origEmo">—</div>
-            <div class="metric-sub" id="origEmoConf">DistilRoBERTa</div>
+            <div class="metric-sub" id="origEmoConf">Confidence</div>
           </div>
           <div class="metric-box">
-            <div class="metric-label">Detected Tone</div>
+            <div class="metric-label">Detected Tone (शैली)</div>
             <div class="metric-val" id="origTone">—</div>
             <div class="metric-sub" id="origToneConf">Linguistic Rules</div>
           </div>
         </div>
         <details style="margin-top:12px;">
-          <summary>Linguistic Features Extracted (Rule-Based Score)</summary>
+          <summary>Linguistic Features Extracted (Rule-Based Feature Score)</summary>
           <pre id="linguisticJson"></pre>
         </details>
       </div>
 
       <!-- 3. Transformation -->
       <div class="card">
-        <h3>3. Transformed Text Output</h3>
+        <h3>
+          <span>3. Transformed Text Output</span>
+          <span id="transBadge" class="lang-badge">Linguistic Transformation</span>
+        </h3>
         <div class="output-box" id="transformedOutput"></div>
         <p style="font-size:12px; color:#64748b; margin-top:6px;" id="genMethodInfo"></p>
         <div class="formatting-info" id="formattingInfo"></div>
@@ -252,7 +436,10 @@
 
       <!-- 4. Comparison -->
       <div class="card">
-        <h3>4. Before vs. After Comparative Evaluation</h3>
+        <h3>
+          <span>4. Before vs. After Comparative Evaluation</span>
+          <span id="evalBadge" class="lang-badge">Evaluation</span>
+        </h3>
         <table>
           <thead>
             <tr>
@@ -270,8 +457,14 @@
   </div>
 
   <script>
+    const regionalToggle = document.getElementById('regionalToggle');
+    const regionalCard = document.getElementById('regionalCard');
+    const modePill = document.getElementById('modePill');
+    const samplesContainer = document.getElementById('samplesContainer');
     const inputText = document.getElementById('inputText');
+    const inputLabel = document.getElementById('inputLabel');
     const toneSelect = document.getElementById('toneSelect');
+    const toneLabel = document.getElementById('toneLabel');
     const contextSelect = document.getElementById('contextSelect');
     const intensitySlider = document.getElementById('intensitySlider');
     const intensityVal = document.getElementById('intensityVal');
@@ -279,51 +472,128 @@
     const statusText = document.getElementById('statusText');
     const resultsSection = document.getElementById('resultsSection');
 
+    // Tones definitions
+    const ENGLISH_TONES = [
+      "Professional",
+      "Sad",
+      "Neutral",
+      "Friendly",
+      "Formal",
+      "Emotional",
+      "Casual",
+      "Humorous",
+      "Academic"
+    ];
+
+    const MARATHI_TONE_LABELS = {
+      "Professional": "Professional (व्यावसायिक / आदरयुक्त)",
+      "Sad": "Sad (दुःखी / विषादपूर्ण)",
+      "Neutral": "Neutral (तटस्थ / वस्तुनिष्ठ)",
+      "Friendly": "Friendly (मैत्रीपूर्ण)",
+      "Formal": "Formal (औपचारिक)",
+      "Emotional": "Emotional (भावूक)",
+      "Casual": "Casual (अनौपचारिक)",
+      "Humorous": "Humorous (विनोदी)",
+      "Academic": "Academic (शैक्षणिक)"
+    };
+
     intensitySlider.addEventListener('input', (e) => {
       intensityVal.innerText = e.target.value;
     });
 
-    function loadSample(text, tone, intensity) {
+    function loadSample(text, tone, intensity, context = "General Text") {
       inputText.value = text;
       toneSelect.value = tone;
       intensitySlider.value = intensity;
       intensityVal.innerText = intensity;
+      contextSelect.value = context;
     }
 
-    async function initTones() {
-      try {
-        const res = await fetch('/api/tones');
-        const tones = await res.json();
-        toneSelect.innerHTML = '';
-        tones.forEach(t => {
-          const opt = document.createElement('option');
-          opt.value = t;
-          opt.innerText = t;
-          toneSelect.appendChild(opt);
-        });
-      } catch (e) {
-        console.error("Failed to load tones", e);
+    function renderTonesDropdown(isMarathi) {
+      const prevVal = toneSelect.value || "Professional";
+      toneSelect.innerHTML = '';
+      ENGLISH_TONES.forEach(toneKey => {
+        const opt = document.createElement('option');
+        opt.value = toneKey;
+        opt.innerText = isMarathi ? (MARATHI_TONE_LABELS[toneKey] || toneKey) : toneKey;
+        toneSelect.appendChild(opt);
+      });
+      if (ENGLISH_TONES.includes(prevVal)) {
+        toneSelect.value = prevVal;
+      } else {
+        toneSelect.value = "Professional";
       }
     }
 
-    initTones();
+    function renderQuickSamples(isMarathi) {
+      if (isMarathi) {
+        samplesContainer.innerHTML = `
+          <span style="font-size: 13px; font-weight: 700; color: #9a3412;">मराठी नमुने (Marathi Samples):</span>
+          <button class="sample-btn marathi-btn" onclick="loadSample('मी उद्या ऑफिसला येऊ शकत नाही कारण मला घरात काही महत्त्वाचं काम आहे.', 'Professional', 70, 'Email')">१. गैरहजर/काम (Excuse)</button>
+          <button class="sample-btn marathi-btn" onclick="loadSample('तुझा रिपोर्ट खूप चुकीचा आहे आणि त्यात अनेक चुका आहेत. लगेच नीट कर.', 'Sad', 75, 'General Text')">२. अहवाल त्रुटी (Sad Tone)</button>
+          <button class="sample-btn marathi-btn" onclick="loadSample('अरे भावा, मला ते प्रेझेंटेशन किंवा फाईल लगेच पाठव.', 'Neutral', 70, 'General Text')">३. अनौपचारिक विनंती (Neutral)</button>
+          <button class="sample-btn marathi-btn" onclick="loadSample('आपला प्रकल्प अयशस्वी झाला आणि सर्व काम रद्द झाले.', 'Sad', 80, 'General Text')">४. प्रकल्प अपयश (Sad/Melancholy)</button>
+        `;
+      } else {
+        samplesContainer.innerHTML = `
+          <span style="font-size: 13px; font-weight: 600; align-self: center;">Quick Samples:</span>
+          <button class="sample-btn" onclick="loadSample('I can\\'t come to the meeting tomorrow because I have some work.', 'Professional', 70, 'General Text')">Meeting Excuse</button>
+          <button class="sample-btn" onclick="loadSample('Your report has many errors. Fix it immediately.', 'Friendly', 65, 'Feedback to Teammate')">Rough Feedback</button>
+          <button class="sample-btn" onclick="loadSample('Hey bro, send me the slides ASAP.', 'Formal', 80, 'Email')">Casual Request</button>
+        `;
+      }
+    }
+
+    function handleRegionalToggle() {
+      const isRegional = regionalToggle.checked;
+      renderTonesDropdown(isRegional);
+      renderQuickSamples(isRegional);
+
+      if (isRegional) {
+        regionalCard.classList.add('active');
+        modePill.classList.add('active');
+        modePill.innerText = "मराठी मोड सुरू (Marathi Active)";
+        inputLabel.innerText = "1. Source Text (मराठी वाक्य किंवा परिच्छेद):";
+        inputText.placeholder = "येथे मराठी वाक्य किंवा परिच्छेद प्रविष्ट करा... उदा. 'मी उद्या ऑफिसला येऊ शकत नाही...'";
+        inputText.value = "मी उद्या ऑफिसला येऊ शकत नाही कारण मला घरात काही महत्त्वाचं काम आहे.";
+        submitBtn.classList.add('marathi-active');
+        submitBtn.innerText = "🚀 Run Regional NLP Pipeline (मराठी रूपांतरण)";
+      } else {
+        regionalCard.classList.remove('active');
+        modePill.classList.remove('active');
+        modePill.innerText = "English Mode";
+        inputLabel.innerText = "1. Source Text:";
+        inputText.placeholder = "Enter sentence or draft message here...";
+        inputText.value = "I can't come to the meeting tomorrow because I have some work.";
+        submitBtn.classList.remove('marathi-active');
+        submitBtn.innerText = "🚀 Run NLP Pipeline";
+      }
+    }
+
+    // Initialize UI
+    renderTonesDropdown(false);
+    renderQuickSamples(false);
 
     async function runPipeline() {
       const text = inputText.value.trim();
       if (!text) {
-        alert("Please enter some text first.");
+        alert("Please enter some text first / कृपया प्रथम मजकूर प्रविष्ट करा.");
         return;
       }
 
+      const isRegional = regionalToggle.checked;
       submitBtn.disabled = true;
-      statusText.innerText = "Running NLP models (Sentiment, Emotion, Tone, Rewriting, Similarity)...";
+      statusText.innerText = isRegional 
+        ? "मराठी NLP मॉडेल्स सुरू आहेत (टोकनायझेशन, भावना विश्लेषण, नियम-आधारित रूपांतरण)..."
+        : "Running NLP pipeline (Sentiment, Emotion, Tone, Rewriting, Similarity)...";
 
       try {
         const payload = {
           text: text,
           tone: toneSelect.value,
           context: contextSelect.value,
-          intensity: parseInt(intensitySlider.value, 10)
+          intensity: parseInt(intensitySlider.value, 10),
+          regional: isRegional
         };
 
         const res = await fetch('/api/transform', {
@@ -339,7 +609,9 @@
 
         const data = await res.json();
         renderResults(data);
-        statusText.innerText = `Completed in ${data.latency_ms} ms`;
+        statusText.innerText = isRegional
+          ? `मराठी प्रक्रिया पूर्ण झाली — वेळ: ${data.latency_ms} ms`
+          : `Completed in ${data.latency_ms} ms`;
       } catch (err) {
         alert(`Error: ${err.message}`);
         statusText.innerText = "Error running analysis.";
@@ -351,18 +623,31 @@
     function renderResults(data) {
       resultsSection.style.display = 'block';
 
+      const isRegional = !!data.regional_mode;
       const orig = data.original_analysis;
       const trans = data.transformed_analysis;
 
+      // Update badges
+      document.getElementById('preprocBadge').innerText = data.language || "English";
+      document.getElementById('preprocBadge').className = isRegional ? "lang-badge marathi" : "lang-badge";
+
+      document.getElementById('analysisBadge').innerText = isRegional ? "मराठी नियम व लेक्सिकॉन" : "Pure NLP (VADER + Rules)";
+      document.getElementById('analysisBadge').className = isRegional ? "lang-badge marathi" : "lang-badge";
+
+      document.getElementById('transBadge').innerText = isRegional ? `मराठी रूपांतरण (${data.target_tone})` : `Linguistic (${data.target_tone})`;
+      document.getElementById('transBadge').className = isRegional ? "lang-badge marathi" : "lang-badge";
+
       // 1. Preprocessing
-      document.getElementById('preprocStats').innerText = 
-        `Word Count: ${orig.preproc.word_count} words | Sentence Count: ${orig.preproc.sentence_count} | Avg Sentence Length: ${orig.preproc.avg_sentence_length} words`;
+      document.getElementById('preprocStats').innerText = isRegional
+        ? `शब्द संख्या (Words): ${orig.preproc.word_count} | वाक्य संख्या (Sentences): ${orig.preproc.sentence_count} | सरासरी वाक्य लांबी: ${orig.preproc.avg_sentence_length} शब्द | अक्षरे: ${orig.preproc.char_count}`
+        : `Word Count: ${orig.preproc.word_count} words | Sentence Count: ${orig.preproc.sentence_count} | Avg Sentence Length: ${orig.preproc.avg_sentence_length} words`;
+      
       document.getElementById('tokenList').innerText = JSON.stringify(orig.preproc.tokens);
       document.getElementById('sentList').innerText = JSON.stringify(orig.preproc.sentences);
 
       // 2. Original Analysis
       document.getElementById('origSent').innerText = orig.sentiment.sentiment;
-      document.getElementById('origSentConf').innerText = `${(orig.sentiment.confidence * 100).toFixed(1)}% confidence`;
+      document.getElementById('origSentConf').innerText = `${(orig.sentiment.confidence * 100).toFixed(1)}% confidence (${orig.sentiment.method})`;
 
       document.getElementById('origEmo').innerText = orig.emotion.emotion;
       document.getElementById('origEmoConf').innerText = `${(orig.emotion.confidence * 100).toFixed(1)}% confidence`;
@@ -370,10 +655,25 @@
       document.getElementById('origTone').innerText = orig.tone.tone;
       document.getElementById('origToneConf').innerText = `${orig.tone.confidence}% confidence`;
 
-      document.getElementById('linguisticJson').innerText = JSON.stringify(orig.tone.features, null, 2);
+      const debugDetails = {
+        detected_tone_features: orig.tone.features,
+        all_tone_scores: orig.tone.scores,
+        emotion_scores: orig.emotion.all_scores || {}
+      };
+      if (orig.sentiment.positive_words) debugDetails.positive_lexicon_hits = orig.sentiment.positive_words;
+      if (orig.sentiment.negative_words) debugDetails.negative_lexicon_hits = orig.sentiment.negative_words;
+
+      document.getElementById('linguisticJson').innerText = JSON.stringify(debugDetails, null, 2);
 
       // 3. Transformation
-      document.getElementById('transformedOutput').innerText = data.transformed_text;
+      const outBox = document.getElementById('transformedOutput');
+      outBox.innerText = data.transformed_text;
+      if (isRegional) {
+        outBox.classList.add('marathi-output');
+      } else {
+        outBox.classList.remove('marathi-output');
+      }
+
       document.getElementById('genMethodInfo').innerText = `Method: ${data.gen_method}`;
       const formattingNotes = data.formatting_applied || [];
       document.getElementById('formattingInfo').innerHTML = formattingNotes.length
@@ -386,34 +686,39 @@
 
       tableBody.innerHTML = `
         <tr>
-          <td><b>Tone / Formality</b></td>
+          <td><b>Language (भाषा)</b></td>
+          <td>${data.language || 'English'}</td>
+          <td>${data.language || 'English'}</td>
+        </tr>
+        <tr>
+          <td><b>Tone / Formality (शैली)</b></td>
           <td>${orig.tone.tone} (${orig.tone.confidence}%)</td>
           <td>${trans.tone.tone} (${trans.tone.confidence}%)</td>
         </tr>
         <tr>
-          <td><b>Sentiment</b></td>
+          <td><b>Sentiment (भावना)</b></td>
           <td>${orig.sentiment.sentiment} (${(orig.sentiment.confidence * 100).toFixed(1)}%)</td>
           <td>${trans.sentiment.sentiment} (${(trans.sentiment.confidence * 100).toFixed(1)}%)</td>
         </tr>
         <tr>
-          <td><b>Dominant Emotion</b></td>
+          <td><b>Dominant Emotion (भाव)</b></td>
           <td>${orig.emotion.emotion} (${(orig.emotion.confidence * 100).toFixed(1)}%)</td>
           <td>${trans.emotion.emotion} (${(trans.emotion.confidence * 100).toFixed(1)}%)</td>
         </tr>
         <tr>
-          <td><b>Word Count</b></td>
+          <td><b>Word Count (शब्द संख्या)</b></td>
           <td>${orig.preproc.word_count} words</td>
           <td>${trans.preproc.word_count} words</td>
         </tr>
         <tr>
-          <td><b>Semantic Similarity</b></td>
+          <td><b>Semantic Similarity (अर्थ जपणूक)</b></td>
           <td>—</td>
-          <td><b>${simPercent}%</b> (Meaning Preservation)</td>
+          <td><b>${simPercent}%</b> (TF-IDF & n-gram lexical alignment)</td>
         </tr>
       `;
 
       document.getElementById('simInfo').innerText = 
-        `Similarity Engine: ${data.similarity.method} (384-dim dense embeddings + cosine similarity)`;
+        `Similarity Engine: ${data.similarity.method} (Devanagari Unicode & Scikit-Learn TF-IDF Cosine + n-gram overlap)`;
     }
   </script>
 </body>

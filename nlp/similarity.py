@@ -20,8 +20,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 def _tokenize(text: str) -> list:
-    """Simple word tokenizer — lowercase, alphabetic tokens only."""
-    return re.findall(r"[a-z]+", text.lower())
+    """Simple word tokenizer — supports English and Devanagari (Marathi) words."""
+    return re.findall(r"[\w\u0900-\u097F]+", text.lower())
 
 
 def _ngram_similarity(words1: list, words2: list, n: int = 2) -> float:
@@ -104,7 +104,7 @@ def compute_similarity(original: str, transformed: str) -> dict:
 
     try:
         # Signal 1: TF-IDF cosine (global lexical similarity)
-        vec = TfidfVectorizer().fit_transform([orig_clean, trans_clean])
+        vec = TfidfVectorizer(token_pattern=r"(?u)\b[\w\u0900-\u097F]+\b").fit_transform([orig_clean, trans_clean])
         tfidf_score = float(cosine_similarity(vec[0], vec[1])[0][0])
         tfidf_score = max(0.0, min(1.0, tfidf_score))
     except Exception:

@@ -18,6 +18,7 @@ TARGET_TONES = [
     "Casual",
     "Friendly",
     "Emotional",
+    "Sad",
     "Academic",
     "Humorous",
     "Neutral",
@@ -433,7 +434,11 @@ def _ensure_period(s: str) -> str:
 
 
 def _strip_trailing_punct(s: str) -> str:
-    return s.rstrip(".!?,;:")
+    # Strip trailing punctuation including ellipsis characters
+    s = s.rstrip(".!?,;:\u2026")
+    # Also strip any trailing standalone dots left by ellipsis expansion
+    s = re.sub(r'\.+$', '', s)
+    return s.rstrip()
 
 
 def _cleanup_punctuation_artifacts(s: str) -> str:
@@ -649,6 +654,16 @@ def _rewrite_sentence_neutral(sent: str, intensity: int) -> str:
     return _capitalise_first(_ensure_period(s.strip()))
 
 
+def _rewrite_sentence_sad(sent: str, intensity: int) -> str:
+    # _strip_trailing_punct removes trailing . ! ? and ellipsis so we can safely append ...
+    s = _strip_trailing_punct(sent.strip())
+    if intensity > 40:
+        if not re.search(r'(unfortunately|sadly|heartbroken|regrettably|sorrow)', s, re.I):
+            s = "Unfortunately, with deep regret, " + s[0].lower() + s[1:]
+    return _capitalise_first(s + "...")
+
+
+
 _SENTENCE_REWRITERS = {
     "Professional": _rewrite_sentence_professional,
     "Formal":       _rewrite_sentence_formal,
@@ -656,6 +671,7 @@ _SENTENCE_REWRITERS = {
     "Friendly":     _rewrite_sentence_friendly,
     "Academic":     _rewrite_sentence_academic,
     "Emotional":    _rewrite_sentence_emotional,
+    "Sad":          _rewrite_sentence_sad,
     "Humorous":     _rewrite_sentence_humorous,
     "Neutral":      _rewrite_sentence_neutral,
 }
@@ -692,8 +708,8 @@ def _apply_prefix_suffix(text: str, tone: str, intensity: int) -> str:
         if not text.endswith("!"):
             text = text.rstrip(".") + "!"
 
-    elif tone == "Emotional":
-        pass  # Sentence rewriter adds "I truly feel that ..."
+    elif tone in ("Emotional", "Sad"):
+        pass  # Sentence rewriter adds "Unfortunately, with deep regret, ..."
 
     return text
 
@@ -769,7 +785,12 @@ def transform_text(text: str, tone: str, intensity: int = 50) -> dict:
         # Graceful degradation — return original text
         return {"transformed": text, "method": f"error-fallback ({exc})"}
 
+    # Use original if transformation produced only punctuation/whitespace
+    import re as _re
+    meaningful = _re.sub(r'[^\w\u0900-\u097F]', '', transformed)
+    final = transformed if meaningful else text
+
     return {
-        "transformed": transformed or text,
+        "transformed": final,
         "method": f"enhanced-linguistic-rules ({tone}, intensity={intensity})",
     }
