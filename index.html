@@ -434,24 +434,6 @@
         <div class="formatting-info" id="formattingInfo"></div>
       </div>
 
-      <!-- 4. Comparison -->
-      <div class="card">
-        <h3>
-          <span>4. Before vs. After Comparative Evaluation</span>
-          <span id="evalBadge" class="lang-badge">Evaluation</span>
-        </h3>
-        <table>
-          <thead>
-            <tr>
-              <th>NLP Dimension</th>
-              <th>Original Text</th>
-              <th>Transformed Text</th>
-            </tr>
-          </thead>
-          <tbody id="compTableBody"></tbody>
-        </table>
-        <p style="font-size:12px; color:#64748b; margin-top:8px;" id="simInfo"></p>
-      </div>
 
     </div>
   </div>
@@ -674,51 +656,12 @@
         outBox.classList.remove('marathi-output');
       }
 
-      document.getElementById('genMethodInfo').innerText = `Method: ${data.gen_method}`;
+      const simPercent = (data.similarity.score * 100).toFixed(1);
+      document.getElementById('genMethodInfo').innerText = `Method: ${data.gen_method} | Semantic Similarity: ${simPercent}%`;
       const formattingNotes = data.formatting_applied || [];
       document.getElementById('formattingInfo').innerHTML = formattingNotes.length
         ? `<b>Output Context: ${data.context}</b><ul>${formattingNotes.map(note => `<li>${note}</li>`).join('')}</ul>`
         : `<b>Output Context: ${data.context}</b> — No additional structural formatting applied.`;
-
-      // 4. Comparison
-      const tableBody = document.getElementById('compTableBody');
-      const simPercent = (data.similarity.score * 100).toFixed(1);
-
-      tableBody.innerHTML = `
-        <tr>
-          <td><b>Language (भाषा)</b></td>
-          <td>${data.language || 'English'}</td>
-          <td>${data.language || 'English'}</td>
-        </tr>
-        <tr>
-          <td><b>Tone / Formality (शैली)</b></td>
-          <td>${orig.tone.tone} (${orig.tone.confidence}%)</td>
-          <td>${trans.tone.tone} (${trans.tone.confidence}%)</td>
-        </tr>
-        <tr>
-          <td><b>Sentiment (भावना)</b></td>
-          <td>${orig.sentiment.sentiment} (${(orig.sentiment.confidence * 100).toFixed(1)}%)</td>
-          <td>${trans.sentiment.sentiment} (${(trans.sentiment.confidence * 100).toFixed(1)}%)</td>
-        </tr>
-        <tr>
-          <td><b>Dominant Emotion (भाव)</b></td>
-          <td>${orig.emotion.emotion} (${(orig.emotion.confidence * 100).toFixed(1)}%)</td>
-          <td>${trans.emotion.emotion} (${(trans.emotion.confidence * 100).toFixed(1)}%)</td>
-        </tr>
-        <tr>
-          <td><b>Word Count (शब्द संख्या)</b></td>
-          <td>${orig.preproc.word_count} words</td>
-          <td>${trans.preproc.word_count} words</td>
-        </tr>
-        <tr>
-          <td><b>Semantic Similarity (अर्थ जपणूक)</b></td>
-          <td>—</td>
-          <td><b>${simPercent}%</b> (TF-IDF & n-gram lexical alignment)</td>
-        </tr>
-      `;
-
-      document.getElementById('simInfo').innerText = 
-        `Similarity Engine: ${data.similarity.method} (Devanagari Unicode & Scikit-Learn TF-IDF Cosine + n-gram overlap)`;
     }
   </script>
 </body>
